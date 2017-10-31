@@ -110,6 +110,14 @@ def get_basic_info(instruction):
     
     return basic_info
 
+def decode_function(instruction, hex_value):
+    signature = ""
+
+    if instruction.size < 2:
+        return hex_value
+    else:
+        return make_only_first(instruction)
+
 def decode_instructions():
     
     start = SelStart()
@@ -149,6 +157,42 @@ def decode_instructions():
             signature += make_only_first(instruction)
         elif mnem_name == "sub":
             signature += make_only_first(instruction)
+        elif mnem_name == "ldarg.0":
+            signature += decode_function(instruction, "02 ")
+        elif mnem_name == "ldarg.1":
+            signature += decode_function(instruction, "03 ")
+        elif mnem_name == "ldfld":
+            signature += decode_function(instruction, "7B ")
+        elif mnem_name == "ldind.ref":
+            signature += decode_function(instruction, "50 ")
+        elif mnem_name == "callvirt":
+            signature += decode_function(instruction, "6F ")
+        elif mnem_name == "brfalse.s":
+            signature += decode_function(instruction, "2C ")
+        elif mnem_name == "stfld":
+            signature += decode_function(instruction, "7D ")
+        elif mnem_name == "newobj":
+            signature += decode_function(instruction, "73 ")
+        elif mnem_name == "brtrue.s":
+            signature += decode_function(instruction, "2B ")
+        elif mnem_name == "ldrstr":
+            signature += decode_function(instruction, "72 ")
+        elif mnem_name == "ldloc.s":
+            signature += decode_function(instruction, "11 ")
+        elif mnem_name == "ldelema":
+            signature += decode_function(instruction, "8F ")
+        elif mnem_name == "conv.i4":
+            signature += decode_function(instruction, "69 ")
+        elif mnem_name == "ret":
+            signature += decode_function(instruction, "2A ")
+        elif mnem_name == "throw":
+            signature += decode_function(instruction, "7A ")
+        elif mnem_name == "ldsfld":
+            signature += decode_function(instruction, "7E ")
+        elif mnem_name == "ldloc.0":
+            signature += decode_function(instruction, "06 ")
+        elif mnem_name == "ldloc.1":
+            signature += decode_function(instruction, "07 ")
         else:
             #print "Didnt find it for %s" % mnem_name
             for byte in range(size_in_bytes):
