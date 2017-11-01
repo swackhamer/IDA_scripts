@@ -4,6 +4,7 @@ from idautils import *
 from idaapi import *
 from idc import *
 
+
 def make_all_absolute(instruction):
     size_in_bytes = instruction.size
     ea = instruction.ea
@@ -12,7 +13,8 @@ def make_all_absolute(instruction):
         signature += "{0:0{1}x}".format(Byte(instruction.ea + byte),2).upper() + " "
         
     return signature
-    
+
+
 def make_only_first(instruction):
     size_in_bytes = instruction.size
     ea = instruction.ea
@@ -23,7 +25,22 @@ def make_only_first(instruction):
             continue
         signature += "?? "
     return signature
-    
+
+
+def make_only_first_two(instruction, hex_value):
+    size_in_bytes = instruction.size
+    ea = instruction.ea
+    signature = ""
+    for byte in range(size_in_bytes):
+        if byte is 0:
+            signature += hex_value
+            continue
+        if byte is 1:
+            continue
+        signature += "?? "
+    return signature
+
+
 def make_all_wildcard(instruction):
     size_in_bytes = instruction.size
     ea = instruction.ea
@@ -32,6 +49,7 @@ def make_all_wildcard(instruction):
         signature += "?? "
         
     return signature
+
 
 def decode_call(instruction):
     signature = ""
@@ -43,10 +61,12 @@ def decode_call(instruction):
         signature = make_only_first(instruction)
         return signature
     else:
-        raise ValueError
+        print("Double Check this might be wrong")
+        signature = make_only_first(instruction)
         
     return signature
-        
+
+
 def decode_push(instruction):
     signature = ""
     ea = instruction.ea	
@@ -61,7 +81,8 @@ def decode_push(instruction):
         raise ValueError
         
     return signature
-        
+
+
 def decode_move(instruction):
     # B9 mov ecx, 0AH, B8 mov eax, 1
     signature = ""
@@ -80,7 +101,8 @@ def decode_move(instruction):
         signature = make_all_wildcard(instruction)
         
     return signature
-    
+
+
 def decode_push(instruction):
     signature = ""
     
@@ -89,15 +111,18 @@ def decode_push(instruction):
     else:
         return make_only_first(instruction)
 
+
 def decode_movdqu(instruction):
     return make_only_first(instruction)
-    
+
+
 def decode_cmp(instruction):
     if instruction.size > 2:
         return make_only_first(instruction)
     else:
         return make_all_absolute(instruction)
-        
+
+
 def get_basic_info(instruction):
     # TODO CLEAN UP OUTPUT
     func = idaapi.get_func(instruction.ea)
@@ -110,13 +135,17 @@ def get_basic_info(instruction):
     
     return basic_info
 
+
 def decode_function(instruction, hex_value):
     signature = ""
 
     if instruction.size < 2:
         return hex_value
+    elif len(hex_value) == 6:
+        return make_only_first_two(instruction, hex_value)
     else:
         return make_only_first(instruction)
+
 
 def decode_instructions():
     
@@ -193,12 +222,18 @@ def decode_instructions():
             signature += decode_function(instruction, "06 ")
         elif mnem_name == "ldloc.1":
             signature += decode_function(instruction, "07 ")
+        elif mnem_name == "stsfld":
+            signature += decode_function(instruction, "80 ")
+        elif mnem_name == "ldnull":
+            signature += decode_function(instruction, "14 ")
+        elif mnem_name == "ldc.r8":
+            signature += decode_function(instruction, "23 ")
+        elif mnem_name == "ldftn":
+            signature += decode_function(instruction, "FE 06 ")
         else:
             #print "Didnt find it for %s" % mnem_name
             for byte in range(size_in_bytes):
                 signature += "?? "
-                
-                
         # build the textual rep of yara signature
         bytes = ""
         size_in_bytes = instruction.size
@@ -209,7 +244,8 @@ def decode_instructions():
         disasm_text.append("{0:0X} {1:24s} {2:s}".format(instruct_address, bytes, GetDisasm(instruct_address)))
         
     return signature, disasm_text
-        
+
+
 def print_signature():
     signature, disasm_text = decode_instructions()
     print "rule opcode{"
@@ -220,6 +256,6 @@ def print_signature():
     print "\tcondition:"
     print "\t\tall of them"
     print "}"
-    
+
+
 print_signature()
-    
