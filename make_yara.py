@@ -3,19 +3,6 @@
 from idautils import *
 from idaapi import *
 from idc import *
-try:
-    import _csv as csv
-except ImportError:
-    import csv
-
-
-def get_opcodes():
-    opcode_dict = {}
-    with open('opcodes.csv') as csvfile:
-        opcode_file = csv.reader(csvfile, delimiter=',', quotechar='|')
-        for row in opcode_file:
-            opcode_dict[row[0]] = row[1]
-        return opcode_dict
 
 
 def make_all_absolute(instruction):
@@ -35,20 +22,6 @@ def make_only_first(instruction):
     for byte in range(size_in_bytes):
         if byte is 0:
             signature += "{0:0{1}x}".format(Byte(instruction.ea), 2).upper() + " "
-            continue
-        signature += "?? "
-    return signature
-
-
-def make_only_first_two(instruction, hex_value):
-    size_in_bytes = instruction.size
-    ea = instruction.ea
-    signature = ""
-    for byte in range(size_in_bytes):
-        if byte is 0:
-            signature += hex_value + " "
-            continue
-        if byte is 1:
             continue
         signature += "?? "
     return signature
@@ -91,8 +64,7 @@ def decode_push(instruction):
     elif byte == 0x6A:
         signature = make_all_absolute(instruction)
     else:
-        raise ValueError
-
+        signature == "?? "
     return signature
 
 
@@ -114,15 +86,6 @@ def decode_move(instruction):
         signature = make_all_wildcard(instruction)
 
     return signature
-
-
-def decode_push(instruction):
-    signature = ""
-
-    if instruction.size < 2:
-        return "5? "
-    else:
-        return make_only_first(instruction)
 
 
 def decode_movdqu(instruction):
@@ -147,16 +110,6 @@ def get_basic_info(instruction):
     basic_info.append("Function: {0:0X} {1:s}".format(func.startEA, func_name))
 
     return basic_info
-
-
-def decode_function(instruction, hex_value):
-    signature = ""
-    if len(hex_value) == 2:
-        return hex_value + " "
-    elif len(hex_value) == 5:
-        return make_only_first_two(instruction, hex_value)
-    else:
-        print("Nothing Found")
 
 
 def decode_instructions():
@@ -192,17 +145,12 @@ def decode_instructions():
             signature += decode_movdqu(instruction)
         elif mnem_name == "cmp":
             signature += decode_cmp(instruction)
-        elif mnem_name[0] == "j":  # hopefully only grapping the jumps
+        elif mnem_name[0] == "j":  # hopefully only getting the jumps
             signature += make_only_first(instruction)
         else:
-            for row in test_opcodes:
-                if mnem_name == row:
-                    opcode_match = str(test_opcodes[row])
-                    signature += decode_function(instruction, str(opcode_match))
-                    # print "Didnt find it for %s" % mnem_name
-        for byte in range(size_in_bytes):
-            if byte != 0:
-                signature += "?? "
+            for byte in range(size_in_bytes):
+                if byte != 0:
+                    signature += "?? "
         # build the textual rep of yara signature
         bytes = ""
         size_in_bytes = instruction.size
